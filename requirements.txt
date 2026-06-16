@@ -1,0 +1,17 @@
+numpy
+pandas
+matplotlib
+seaborn
+scipy
+nltk
+nrclex
+afinn
+vaderSentiment
+textblob
+emoji
+spacy
+scikit-learn
+xgboost
+mlxtend
+feature-engine
+ipython

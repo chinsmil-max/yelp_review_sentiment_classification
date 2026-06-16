@@ -1,0 +1,67 @@
+# Yelp Review Sentiment Analysis and Classification
+
+A comprehensive NLP (Natural Language Processing) project designed to predict the sentiment of Yelp reviews (1 star vs. 5 stars) using a combination of text vectorization (TF-IDF) and engineered linguistic/semantic features.
+
+## Objective
+
+The primary goal is to build a highly interpretable and robust binary classifier to distinguish between explicitly negative (1-star) and positive (5-star) reviews. The dataset has a strong class imbalance (81.7% positive, 18.3% negative), which requires tracking specialized metrics (`F1-macro`, `PR AUC`) and applying algorithmic weighting (`class_weight='balanced'`).
+
+## Project Structure
+
+```text
+yelp_project/
+├── data/
+│   ├── yelp.csv                     # Original data 
+│   ├── yelp_data_prepared.parquet   # Data after EDA and feature engineering
+│   └── yelp_data_sfs_15.parquet     # Final dataset after feature selection
+├── notebooks/
+│   ├── 01_EDA_and_feature_engineering_yelp.ipynb
+│   ├── 02_Preprocessing_FeatureSelection_yelp.ipynb
+│   ├── 03_Classification_Models_yelp.ipynb
+│   └── utils.py                     # Custom functions (SpaCy cleaning, visualization)
+├── requirements.txt
+└── README.md
+
+```
+
+## Tech Stack and Methodology
+
+* **Text Processing:** `SpaCy` (lemmatization, custom negation preservation), `NLTK`, Regular Expressions.
+* **Feature Engineering:**
+* Structural metrics (word count, sentence count, punctuation density).
+* Semantic lexicons (`VADER`, `AFINN`, `Bing`, `NRC Emotion Lexicon`, `TextBlob`).
+
+
+* **Feature Selection:** `SmartCorrelatedSelection` (to eliminate multicollinearity) and `Sequential Feature Selection` (SFS).
+* **Transformations:** `Yeo-Johnson` for skewed numerical distributions, `MinMaxScaler`, `TF-IDF` with sublinear scaling.
+* **Modeling (`scikit-learn`, `xgboost`):** Evaluation of Logistic Regression, Linear SVC, Naive Bayes, Random Forest, Extra Trees, and XGBoost.
+
+## Key Results and Insights
+
+### Model Performance
+
+The best performing model was **Logistic Regression (Text + Features)**. Linear models demonstrated high stability, effectively extracting hidden patterns without overfitting on the training data.
+
+* **F1-macro (Test):** 0.922
+* **Balanced Accuracy:** 0.929
+* **PR AUC (Class 0):** 0.934
+* *Tree-based models (such as XGBoost and Random Forest) demonstrated a high proneness to overfitting (the generalization gap was 11–13%).*
+
+### Meta-features
+
+Combining raw TF-IDF tokens with engineered structural and semantic features significantly improved the detection of the minority negative class. For example, `PR AUC` for Class 0 increased from 0.926 to 0.934 when meta-features were added to the Logistic Regression pipeline.
+
+### Top Features
+
+Analysis of the model coefficients revealed the most significant predictors:
+
+* **Positive Class:** `polarity`, `score_vader`, and slang tokens (`love`, `awesome`, `bomb`).
+* **Negative Class:** The negation particle `not` (preserved due to custom SpaCy cleaning), specific domain markers (`food`, `bland`, `greasy`, `overpriced`), and the `nrc_neg_norm` lexicon score.
+
+### Error Analysis
+
+False positive triggers (predicting positive for actual negative reviews) were primarily caused by the fundamental limitations of the Bag-of-Words/TF-IDF approach:
+
+* Inability to recognize sarcasm.
+* Misattribution of positive tokens when the review author praises a competitor (another restaurant).
+* Blindness to temporal context (e.g., praising how good things *used to be*).
